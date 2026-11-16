@@ -23,7 +23,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-white focus:px-3 focus:py-1 focus:text-zinc-950">Skip to content</a>
         {isEphemeralDemo() && (
         <div role="note" className="bg-amber-300 px-4 py-2 text-center text-sm font-medium text-zinc-950">
-          Demo mode: this deployment has no permanent database yet, so accounts and changes can reset at any time.
+          Preview: browsing works, but accounts are switched off until this deployment is connected to a database.
         </div>
       )}
         <header className="sticky top-0 z-40 border-b border-zinc-900 bg-zinc-950/90 backdrop-blur">

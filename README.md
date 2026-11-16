@@ -17,7 +17,7 @@ A streaming site for openly licensed and public-domain films and series, with it
 | Viewer profiles (up to 5 per account): watchlist, continue watching and recently watched are per profile | Tested (PGlite + Playwright) |
 | SEO: per-title metadata, Open Graph, canonical URLs, JSON-LD (`Movie` / `TVSeries`), `sitemap.xml`, `robots.txt` | Tested (Playwright) |
 | Hosted Postgres driver (`DATABASE_URL`, postgres.js) with auto-migrate and seed | Tested against PGlite served over the Postgres wire protocol (sign-up, admin, watchlist); not yet against Neon or Supabase |
-| Netlify serverless (demo mode in `/tmp`) | Tested by simulating the Lambda environment locally; sign-up, watchlist |
+| Netlify serverless without a database (preview mode) | Live site checked: pages 200. Accounts are switched off because separate instances had separate databases (seen live: sessions flipped between signed in and out) |
 
 ## Content and licences
 
@@ -76,7 +76,7 @@ Sign up (the first account is admin), open **Admin**, and try publishing **Sprin
 
 The site deploys as-is: Netlify's Next.js runtime builds it, and `next.config.ts` bundles the SQL migrations and PGlite files into the server function.
 
-- **Without a database** (the default), the app runs in **demo mode**: the embedded database lives in the function's `/tmp`, so accounts and changes reset whenever Netlify recycles the function. A banner tells visitors.
+- **Without a database** (the default), the app runs in **preview mode**: the embedded database lives in each function instance's `/tmp`. Netlify runs several instances, so accounts can't work reliably. Sign-up and sign-in are therefore switched off, with a clear notice, while public pages keep working (seeded content in StreamOS; the landing page in FlowForge).
 - **For permanent data**, connect a Postgres database:
   - In Netlify, add the Neon extension or Netlify DB; it sets `NETLIFY_DATABASE_URL`. Any Postgres works through `DATABASE_URL` instead.
   - Also set `SESSION_SECRET` to a random string of 32+ characters (for example from `openssl rand -base64 48`). Production refuses to start without one once a database is connected.

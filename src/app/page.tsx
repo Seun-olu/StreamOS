@@ -2,6 +2,7 @@ import Link from "next/link";
 import { genreRows, isFinished } from "@/lib/catalog";
 import { Artwork, btnPrimary, btnSecondary, Empty, Meta, Row, TitleCard } from "@/components/ui";
 import { getUser } from "@/server/auth";
+import { isEphemeralDemo } from "@/server/db";
 import { getActiveProfile, listPublished, recentlyWatched, watchlist } from "@/server/queries";
 
 export default async function Home() {
@@ -25,7 +26,7 @@ export default async function Home() {
             Browse and search without an account; sign up to keep a list, pick up where you left off, and add profiles for the household.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <Link href="/signup" className={btnPrimary}>Create a free account</Link>
+            {!isEphemeralDemo() && <Link href="/signup" className={btnPrimary}>Create a free account</Link>}
             <Link href={`/title/${hero.slug}`} className={btnSecondary}>Browse {hero.name}</Link>
           </div>
         </section>
