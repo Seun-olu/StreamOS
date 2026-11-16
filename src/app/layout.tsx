@@ -3,6 +3,7 @@ import Link from "next/link";
 import { signOut } from "@/app/actions";
 import { siteUrl } from "@/lib/site";
 import { getUser } from "@/server/auth";
+import { isEphemeralDemo } from "@/server/db";
 import { getActiveProfile, getStaffRole } from "@/server/queries";
 import "./globals.css";
 
@@ -20,6 +21,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="en">
       <body className="min-h-screen bg-zinc-950 text-zinc-100 antialiased">
         <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-white focus:px-3 focus:py-1 focus:text-zinc-950">Skip to content</a>
+        {isEphemeralDemo() && (
+        <div role="note" className="bg-amber-300 px-4 py-2 text-center text-sm font-medium text-zinc-950">
+          Demo mode: this deployment has no permanent database yet, so accounts and changes can reset at any time.
+        </div>
+      )}
         <header className="sticky top-0 z-40 border-b border-zinc-900 bg-zinc-950/90 backdrop-blur">
           <nav className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3 sm:px-6" aria-label="Main">
             <Link href="/" className="text-lg font-black tracking-tight text-red-400">StreamOS</Link>

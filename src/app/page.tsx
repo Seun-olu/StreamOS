@@ -17,11 +17,24 @@ export default async function Home() {
 
   return (
     <>
+      {!user && (
+        <section aria-labelledby="welcome" className="mb-10 rounded-2xl border border-zinc-800 bg-gradient-to-br from-red-950/60 via-zinc-950 to-zinc-950 px-6 py-10 sm:px-10">
+          <h1 id="welcome" className="max-w-2xl text-3xl font-black tracking-tight sm:text-4xl">Free films and series you can actually share.</h1>
+          <p className="mt-3 max-w-2xl text-zinc-300">
+            Every title on StreamOS is openly licensed or in the public domain, with its licence and source shown on the page.
+            Browse and search without an account; sign up to keep a list, pick up where you left off, and add profiles for the household.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link href="/signup" className={btnPrimary}>Create a free account</Link>
+            <Link href={`/title/${hero.slug}`} className={btnSecondary}>Browse {hero.name}</Link>
+          </div>
+        </section>
+      )}
       <section className="mb-10 grid gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] md:items-end" aria-label="Featured">
         <Artwork title={hero} large decorative className="aspect-video w-full" />
         <div className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-widest text-red-400">Featured</p>
-          <h1 className="text-3xl font-bold tracking-tight">{hero.name}</h1>
+          {user ? <h1 className="text-3xl font-bold tracking-tight">{hero.name}</h1> : <h2 className="text-3xl font-bold tracking-tight">{hero.name}</h2>}
           <Meta title={hero} />
           <p className="text-zinc-300">{hero.synopsis}</p>
           <div className="flex gap-3">

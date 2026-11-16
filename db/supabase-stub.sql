@@ -11,8 +11,13 @@ create table auth.users (
 create function auth.uid() returns uuid language sql stable as $$
   select nullif(nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub', '')::uuid
 $$;
-create role anon nologin;
-create role authenticated nologin;
+do $$ begin
+  if not exists (select 1 from pg_roles where rolname = 'anon') then create role anon nologin; end if;
+  if not exists (select 1 from pg_roles where rolname = 'authenticated') then create role authenticated nologin; end if;
+end $$;
+-- Hosted Postgres (e.g. Neon) connects as a non-superuser, which must be a member
+-- to SET ROLE. A no-op for superusers (PGlite).
+grant anon, authenticated to current_user;
 grant usage on schema public, auth to anon, authenticated;
 grant execute on function auth.uid() to anon, authenticated;
 -- Supabase grants table/function/sequence privileges to these roles by default;

@@ -16,7 +16,8 @@ A streaming site for openly licensed and public-domain films and series, with it
 | Player: HTML5 video that saves progress (every 10 s, on pause, end and tab hide) and resumes from it; next-episode link | Tested (Playwright, local test clip) |
 | Viewer profiles (up to 5 per account): watchlist, continue watching and recently watched are per profile | Tested (PGlite + Playwright) |
 | SEO: per-title metadata, Open Graph, canonical URLs, JSON-LD (`Movie` / `TVSeries`), `sitemap.xml`, `robots.txt` | Tested (Playwright) |
-| Hosted Postgres driver (`DATABASE_URL`, postgres.js) | Implemented, not tested |
+| Hosted Postgres driver (`DATABASE_URL`, postgres.js) with auto-migrate and seed | Tested against PGlite served over the Postgres wire protocol (sign-up, admin, watchlist); not yet against Neon or Supabase |
+| Netlify serverless (demo mode in `/tmp`) | Tested by simulating the Lambda environment locally; sign-up, watchlist |
 
 ## Content and licences
 
@@ -66,10 +67,20 @@ Sign up (the first account is admin), open **Admin**, and try publishing **Sprin
 | Var | Purpose |
 |---|---|
 | `SESSION_SECRET` | 32+ chars; required when `NODE_ENV=production` (unless `STREAMOS_LOCAL_DEMO=1`) |
-| `DATABASE_URL` | Use a hosted Postgres instead of PGlite (apply `db/migrations` first) |
+| `DATABASE_URL` / `NETLIFY_DATABASE_URL` | Use a hosted Postgres instead of PGlite (migrations run automatically) |
 | `PGLITE_DIR` | Where PGlite stores data (default `.data/pglite`) |
 | `STREAMOS_SEED` | Set to `0` to skip the demo catalogue |
 | `NEXT_PUBLIC_SITE_URL` | Absolute URL for canonical links, sitemap and JSON-LD (default `http://localhost:3006`) |
+
+## Deploying on Netlify
+
+The site deploys as-is: Netlify's Next.js runtime builds it, and `next.config.ts` bundles the SQL migrations and PGlite files into the server function.
+
+- **Without a database** (the default), the app runs in **demo mode**: the embedded database lives in the function's `/tmp`, so accounts and changes reset whenever Netlify recycles the function. A banner tells visitors.
+- **For permanent data**, connect a Postgres database:
+  - In Netlify, add the Neon extension or Netlify DB; it sets `NETLIFY_DATABASE_URL`. Any Postgres works through `DATABASE_URL` instead.
+  - Also set `SESSION_SECRET` to a random string of 32+ characters (for example from `openssl rand -base64 48`). Production refuses to start without one once a database is connected.
+  - Then redeploy. Migrations, and the demo seed where there is one, run automatically on first connection. `DATABASE_POOL_MAX` caps connections; the default is 5.
 
 ## Tests
 

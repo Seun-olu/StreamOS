@@ -23,6 +23,17 @@ export async function asOwner(tx: Sql) {
 
 const DB_DIR = join(process.cwd(), "db");
 
+/** Hosted Postgres URL: DATABASE_URL, or the one Netlify DB (Neon) injects. */
+export const hostedDatabaseUrl = () => process.env.DATABASE_URL || process.env.NETLIFY_DATABASE_URL || "";
+
+/**
+ * True on a serverless host (Netlify/AWS Lambda) with no hosted database: the
+ * embedded database then lives in /tmp and is wiped whenever the function
+ * restarts. The UI shows a "demo data resets" notice in this mode.
+ */
+export const isEphemeralDemo = () =>
+  !hostedDatabaseUrl() && !!(process.env.LAMBDA_TASK_ROOT || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NETLIFY);
+
 export function migrationFiles(): { name: string; sql: string }[] {
   return readdirSync(join(DB_DIR, "migrations"))
     .filter((f) => f.endsWith(".sql"))
@@ -33,6 +44,8 @@ export function migrationFiles(): { name: string; sql: string }[] {
 /** Applies pending migrations (and, for PGlite, the Supabase auth stub). */
 export async function migrate(db: Db, { withStub }: { withStub: boolean }) {
   await db.transaction(async (tx) => {
+    // Several cold-starting instances may migrate at once; serialise them.
+    await tx.query("select pg_advisory_xact_lock(hashtext('streamos.migrate'))");
     if (withStub) {
       const { rows } = await tx.query<{ ok: boolean }>("select exists (select 1 from pg_namespace where nspname = 'auth') as ok");
       if (!rows[0]!.ok) await tx.exec(readFileSync(join(DB_DIR, "supabase-stub.sql"), "utf8"));
@@ -48,12 +61,13 @@ export async function migrate(db: Db, { withStub }: { withStub: boolean }) {
 }
 
 async function open(): Promise<Db> {
-  const url = process.env.DATABASE_URL;
+  const url = hostedDatabaseUrl();
   if (url) {
-    // Hosted Postgres (e.g. Supabase). Migrations are applied out of band.
+    // Hosted Postgres (Supabase, Neon / Netlify DB, ...). Pending migrations are
+    // applied on first connection; the auth stub only if there's no auth schema.
     const { default: postgres } = await import("postgres");
-    const client = postgres(url, { max: 5, prepare: false });
-    return {
+    const client = postgres(url, { max: Number(process.env.DATABASE_POOL_MAX ?? 5), prepare: false, onnotice: () => {} });
+    const hosted: Db = {
       transaction: (fn) =>
         client.begin((t) =>
           fn({
@@ -62,9 +76,12 @@ async function open(): Promise<Db> {
           }),
         ) as never,
     };
+    await migrate(hosted, { withStub: true });
+    if (process.env.STREAMOS_SEED !== "0") await seed(hosted);
+    return hosted;
   }
   const { PGlite } = await import("@electric-sql/pglite");
-  const dir = resolve(process.env.PGLITE_DIR ?? join(process.cwd(), ".data", "pglite"));
+  const dir = resolve(process.env.PGLITE_DIR ?? (isEphemeralDemo() ? "/tmp/pglite" : join(process.cwd(), ".data", "pglite")));
   mkdirSync(dirname(dir), { recursive: true });
   const pg = new PGlite(dir);
   const db: Db = { transaction: (fn) => pg.transaction((tx) => fn(tx)) };

@@ -3,7 +3,7 @@ import { promisify } from "node:util";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
-import { getDb, type Db } from "./db";
+import { getDb, isEphemeralDemo, type Db } from "./db";
 
 /**
  * Local-mode authentication: users live in auth.users (the Supabase table, or
@@ -20,7 +20,8 @@ const MAX_AGE_S = 60 * 60 * 24 * 7;
 function secret(): string {
   const s = process.env.SESSION_SECRET;
   if (s && s.length >= 32) return s;
-  if (process.env.NODE_ENV === "production" && !process.env.STREAMOS_LOCAL_DEMO) {
+  // A fixed fallback is only acceptable when the data itself is throwaway.
+  if (process.env.NODE_ENV === "production" && !process.env.STREAMOS_LOCAL_DEMO && !isEphemeralDemo()) {
     throw new Error("SESSION_SECRET (32+ chars) is required in production");
   }
   return "streamos-local-development-secret-not-for-production";

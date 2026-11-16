@@ -24,7 +24,8 @@ async function signIn(page: Page, u: typeof ADMIN) {
 
 test("public discovery, detail, search and SEO work signed out", async ({ page, request }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1, name: "Sintel" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Free films and series you can actually share." })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "Sintel" })).toBeVisible();
   await expect(page.getByRole("region", { name: "Series" }).getByRole("link", { name: "Superman (1941)" })).toBeVisible();
   await expect(page.getByRole("region", { name: "Animation" })).toBeVisible();
 
